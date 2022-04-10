@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from typing import Optional
 from enum import Enum
+from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -9,6 +10,13 @@ class Model(str, Enum):
     python = "python"
     snake = "snake"
     fastapi = "fastapi"
+
+
+class Item(BaseModel):
+    name: str
+    description: Optional[str] = None
+    price: float
+    tax: Optional[float] = None
 
 
 @app.get('/')
@@ -48,8 +56,26 @@ async def get_model(model_name: Model):
 
 
 # http://localhost:8000/item/asdf?description=asdf
-@app.get('/item/{item_id}')
-async def get_item(item_id: str, description: str):
-    item = {"item_id": item_id, "description": description}
+@app.put('/item/{item_id}')
+async def get_item(
+        item_id: int,
+        item: Item,
+        q: Optional[str] = None
+):
+    result = {"item_id": item, **item.dict()}
 
-    return item
+    if q:
+        result.update({"q": q})
+
+    return result
+
+
+@app.post('/item')
+async def create_items(item: Item):
+    item_dict = item.dict()
+
+    if item.tax:
+        price_with_tax = item.price + item.tax
+        item_dict.update({"price_with_tax": price_with_tax})
+
+    return item_dict
