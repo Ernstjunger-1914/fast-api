@@ -1,5 +1,5 @@
-from fastapi import FastAPI
-from typing import Optional
+from fastapi import FastAPI, Query
+from typing import Optional, List
 from enum import Enum
 from pydantic import BaseModel
 
@@ -79,3 +79,20 @@ async def create_items(item: Item):
         item_dict.update({"price_with_tax": price_with_tax})
 
     return item_dict
+
+
+# Query Class로 최대 길이 제한, metadata 추가
+@app.get('/items')
+async def read_items(
+        query: Optional[List[str]] = Query(
+            None,
+            min_length=5,
+            max_length=50,
+            title="Query String",
+            description="손소독",
+            deprecated=True
+        )
+):
+    query_items = {"query": query}
+
+    return query_items
