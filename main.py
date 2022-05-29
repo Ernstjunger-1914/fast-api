@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Path
 from typing import Optional, List
 from enum import Enum
 from pydantic import BaseModel
@@ -58,11 +58,11 @@ async def get_model(model_name: Model):
 # http://localhost:8000/item/asdf?description=asdf
 @app.put('/item/{item_id}')
 async def get_item(
-        item_id: int,
-        item: Item,
-        q: Optional[str] = None
+        *,
+        item_id: int = Path(..., title="가져올 item의 ID"),
+        q: Optional[str] = Query(None, alias="get_item-query")
 ):
-    result = {"item_id": item, **item.dict()}
+    result = {"item_id": item_id}
 
     if q:
         result.update({"q": q})
@@ -81,18 +81,35 @@ async def create_items(item: Item):
     return item_dict
 
 
-# Query Class로 최대 길이 제한, metadata 추가
+'''
+Query Class로 최대 길이 제한, metadata 추가
+
+ge 크거나 같다
+gt 작거나 같다
+lt 작다
+le 작거나 같다
+'''
+
+
 @app.get('/items')
 async def read_items(
-        query: Optional[List[str]] = Query(
-            None,
-            min_length=5,
-            max_length=50,
-            title="Query String",
-            description="손소독",
-            deprecated=True
+        *,
+        item_id: int = Path(
+            ...,
+            title="가져올 item의 ID",
+            ge=0,
+            le=1000
+        ),
+        query: str,
+        size: float = Query(
+            ...,
+            gt=0,
+            lt=10
         )
 ):
-    query_items = {"query": query}
+    result = {"item_id": item_id}
 
-    return query_items
+    if query:
+        result.update({"query": query})
+
+    return result
