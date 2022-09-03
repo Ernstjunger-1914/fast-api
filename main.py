@@ -1,15 +1,8 @@
-from fastapi import FastAPI, Query, Path
-from typing import Optional, List
-from enum import Enum
+from fastapi import FastAPI, Body
 from pydantic import BaseModel
+from typing import Optional
 
 app = FastAPI()
-
-
-class Model(str, Enum):
-    python = "python"
-    snake = "snake"
-    fastapi = "fastapi"
 
 
 class Item(BaseModel):
@@ -19,97 +12,37 @@ class Item(BaseModel):
     tax: Optional[float] = None
 
 
-@app.get('/')
-async def root():
-    return {"message": "server is running"}
+class User(BaseModel):
+    user_id: str
+    user_name: str
 
 
-@app.get('/user/{user_id}/item/{item_id}')
-async def get_user_item(
-        user_id: int,
-        item_id: str,
-        query: Optional[str] = None,
-        sh: bool = False
-):
-    item = {"item_id": item_id, "user_id": user_id}
+"""
+PUT
 
-    if query:
-        item.update({"query": query})
-
-    if not sh:
-        item.update(
-            {"description": "Lorem Ipsum is simply dummy text of the printing and typesetting industry."}
-        )
-
-    return item
-
-
-@app.get('/model/{model_name}')
-async def get_model(model_name: Model):
-    if model_name == Model.python:
-        return {"model_name": model_name, "message": "py"}
-
-    if model_name.value == "fastapi":
-        return {"model_name": model_name, "message": "fast"}
-
-    return {"model_name": model_name, "message": "model page"}
+{
+    "item": {
+        "name": "ssd",
+        "description": "손소독",
+        "price": 15.5,
+        "tax": 3.2
+    },
+    "user": {
+        "user_id": "ssd1234",
+        "user_name": "asdf"
+    },
+    "importance": 111
+}
+"""
 
 
-# http://localhost:8000/item/asdf?description=asdf
 @app.put('/item/{item_id}')
-async def get_item(
-        *,
-        item_id: int = Path(..., title="가져올 item의 ID"),
-        q: Optional[str] = Query(None, alias="get_item-query")
+async def update_item(
+        item_id: int,
+        item: Item,
+        user: User,
+        importance: int = Body(...)
 ):
-    result = {"item_id": item_id}
-
-    if q:
-        result.update({"q": q})
-
-    return result
-
-
-@app.post('/item')
-async def create_items(item: Item):
-    item_dict = item.dict()
-
-    if item.tax:
-        price_with_tax = item.price + item.tax
-        item_dict.update({"price_with_tax": price_with_tax})
-
-    return item_dict
-
-
-'''
-Query Class로 최대 길이 제한, metadata 추가
-
-ge 크거나 같다
-gt 작거나 같다
-lt 작다
-le 작거나 같다
-'''
-
-
-@app.get('/items')
-async def read_items(
-        *,
-        item_id: int = Path(
-            ...,
-            title="가져올 item의 ID",
-            ge=0,
-            le=1000
-        ),
-        query: str,
-        size: float = Query(
-            ...,
-            gt=0,
-            lt=10
-        )
-):
-    result = {"item_id": item_id}
-
-    if query:
-        result.update({"query": query})
+    result = {"item_id": item_id, "item": item, "user": user, "importance": importance}
 
     return result
